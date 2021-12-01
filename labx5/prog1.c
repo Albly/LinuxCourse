@@ -13,13 +13,13 @@
 
 #define BUFSIZE     128  // size of input buffer 
 #define CMDNAME      32  // maximum size of the command
-#define NUMMARGS      8  // maximum number of arguments
+#define NUMARGS      8  // maximum number of arguments
 #define FULLCMD     255  // 
 
 int main(int argc, char *argv[]){
     char buf[BUFSIZE];
     char cmd[BUFSIZE];
-    char *cmadargs[NUMMARGS] = {NULL};
+    char *cmadargs[NUMARGS] = {NULL};
     int params, totparams;
     int history = 0;
     int nparams = 0;
@@ -39,14 +39,14 @@ int main(int argc, char *argv[]){
         if (strlen(buf) == 0 ){
             continue;
         }
-        for (nparams = 0; nparams<NUMMARGS; nparams++){
+        for (nparams = 0; nparams<NUMARGS; nparams++){
             free(cmadargs[nparams]);                // Free a block allocated by `malloc', `realloc' or `calloc'.
             cmadargs[nparams] = 0;
         }
         totparams = params = nparams = 0;
 
         do{
-            n = sscanf(buf+totparams, "%ms %n", &cmadargs[nparams], &nparams); // Read formatted input from S
+            n = sscanf(buf+totparams, "%ms %n", &cmadargs[nparams], &params); // Read formatted input from S
             totparams += params;
             nparams ++;
         } while (n>0);
