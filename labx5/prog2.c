@@ -1,3 +1,8 @@
+/*Program for demonstration of acces to files from forked processes
+ 
+ * 23.11.21. Alexander Blagodarnyi
+ */
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -47,23 +52,25 @@ int main(int argc, char *argv[]){
     }
     else{
         process = "child";
-        delay_microsec = 650000;
-        linepos = 1;
+        delay_microsec = 350000;
+        linepos = 0;
     }
     pid = getpid();
     ppid = getppid();
 
     for (int i=0; i<NLINES; i++){
-        fprintf(stderr,"now printing %s\n", process);
+        fprintf(stderr,"line %d now printing %s nchr %d rec %d prevrec %ld\n",i, process,numchars, numchars*(i+linepos), chrec );/// TODO: 
         numchars = snprintf(buf, BUFSIZE, "pid=%6d ppid=%6d %6s Here is line %3d\n", pid, ppid, process, i);
-        fseek(f1, (long)(numchars*(i+1)*linepos), SEEK_SET);
-        usleep(delay_microsec);
+        fseek(f1, (long)(numchars*(i+1)*linepos), SEEK_SET);    // Seek to a certain position on STREAM
+        usleep(delay_microsec);     //Sleep USECONDS microseconds
 
-        if (fputs(buf,f1) < 0){
+        if (fputs(buf,f1) < 0){ //Write a string to STREAM.
+
             perror("fputs");
             exit(3);
         }
-        fflush(f1);
+        fflush(f1); //Flush STREAM, or all streams if STREAM is NULL
     }
+    wait(NULL);
     fprintf(stderr, "all done %s\n", process);
 }

@@ -1,3 +1,8 @@
+/*Program for demonstration of shell behaviour reading commands from stdin
+
+* 23.11.21. Alexander Blagodarnyi
+*/
+
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -30,7 +35,10 @@ int main(int argc, char *argv[]){
         printf("%-d> ", history++);
         if (fgets(buf,BUFSIZE, stdin) == NULL){     //Get a newline-terminated string of finite length from STREAM
             break;
-        }  
+        }
+        if (strlen(buf) == 0 ){
+            continue;
+        }
         for (nparams = 0; nparams<NUMMARGS; nparams++){
             free(cmadargs[nparams]);                // Free a block allocated by `malloc', `realloc' or `calloc'.
             cmadargs[nparams] = 0;

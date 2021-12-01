@@ -41,6 +41,10 @@ int main(){
     fprintf(stderr, "Asking allocation max size:  %ld %.2f GB\n", mys_bytes, mys_bytes*GiB);
 
     if ( malloc(mys_bytes) == NULL) perror ("malloc");  // allocate LONG_MAX mytes of memory
+    fprintf(stderr, "Error number %d text: %s\n", errno, strerror(errno));
+
+    while((data =(char*) malloc(mys_bytes))==NULL)mys_bytes >>=1;
+    
     fprintf(stderr, "successfuly allocated %ld %.2f Gb\n", mys_bytes, mys_bytes*GiB);
 
     do {
