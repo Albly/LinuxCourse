@@ -10,13 +10,13 @@
  *------------------------------------------------
  *|  nProc  |   Trials   |   Elapsed   |   dpi   |
  *|----------------------------------------------|	
- *|    4    |   32*10^9  |   336.96    |  2e-05  |
+ *|    4    |   32*10^9  |   124.44    |  2e-05  |
  *|----------------------------------------------|
- *|    3    |   24*10^9  |   155.85    |  3e-05  |
+ *|    3    |   24*10^9  |   124.42    |  3e-05  |
  *|----------------------------------------------|
- *|    2    |   16*10^9  |   120.72    |  4e-05  |
+ *|    2    |   16*10^9  |   124.27    |  4e-05  |
  *|----------------------------------------------|
- *|    1    |    8*10^9  |   123.29    |  5e-05  |
+ *|    1    |    8*10^9  |   124.18    |  5e-05  |
  *|----------------------------------------------|
  *
  * 03.12.21. Alexander Blagodarnyi
@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
+#include <omp.h>
 
 #define NPOINTS     8000000000
 #define GENSEED     111111
@@ -40,29 +41,31 @@
 int main(int argc, char *argv[]){
     long ncirc = 0;
     double pi, dpi;
-    int size;
-    int rank;
 
     unsigned long long num_trials = NPOINTS;
     int rank, size;
     struct timespec tstart, tend;
 
-    MPI_Init(&argc , &argv);			
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Init(&argc , &argv);	          // Start MPI 		
+    MPI_Comm_size(MPI_COMM_WORLD, &size); // Initialize number of procs
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank); // nitialize current proc
 
-    clock_gettime(CLOCK_REALTIME, &tstart);
+    clock_gettime(CLOCK_REALTIME, &tstart);  
 
+    unsigned long long mpi_ncirc = 0;      // ncirc for each MPI proc
+#pragma omp parallel default(none) firstprivate(num_trials) shared(ncirc) // do in parallel
 {
     double x,y,t,dres1, dres2;
     struct drand48_data rbuf;
-    long rseed = (rank+1)*GENSEED;
-    unsigned long long local_ncirc = 0;
+    int thrd_num = omp_get_thread_num();
+    long rseed = (rank+1+thrd_num)*GENSEED; // seed depend on rank and thread number
+    unsigned long long local_ncirc = 0;     // local ncirc for each thread
     unsigned long long i;
 
     srand48_r(rseed,&rbuf);
-
-    for (i =0; i< num_trials; i++ ){
+    
+    #pragma omp for //reduction(+:local_ncirc) // split the work
+    for (i =0; i < num_trials; i++ ){
         drand48_r(&rbuf, &dres1);
         drand48_r(&rbuf, &dres2);
 
@@ -71,13 +74,13 @@ int main(int argc, char *argv[]){
         t = x*x + y*y;
 
         if (t <= 1.0){
-            local_ncirc++;
+            local_ncirc++; 
         }
-
     }
-    MPI_Reduce(&local_ncirc, &ncirc,1 , MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    #pragma omp atomic
+    mpi_ncirc += local_ncirc // end parallel region. add result to mpi result
+   MPI_Reduce(&mpi_ncirc, &ncirc,1 , MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD); // finish process
 }
-
 clock_gettime(CLOCK_REALTIME, &tend);
 double tlaps = dsecond(tstart, tend);
 
@@ -86,7 +89,7 @@ pi = 4.0 * (double) ncirc /(double) num_trials;
 dpi = pi*sqrt(2.0/num_trials);
 if(rank==0)
 fprintf(stdout, "Trials: %ld Ncirc: %ld Threads: %d Elapsed: %.2f PI: %.8lf dpi: %.lg\n", num_trials, ncirc, size, tlaps, pi, dpi);
-MPI_Finalize();
+MPI_Finalize();  // finish MPI
 return 0;
 
 }

@@ -34,7 +34,7 @@ int main(){
 
     long ncirc = 0;
     double pi, dpi;
-    int numthrd = omp_get_max_threads();
+    int size = omp_get_max_threads();
     unsigned long long num_trials = NPOINTS;
 
     double tstart = omp_get_wtime();
@@ -44,8 +44,8 @@ int main(){
    
     double x, y, t, dres1, dres2;
     struct drand48_data rbuf;
-    int mythrid = omp_get_thread_num();
-    long rseed = (mythrid+1) * GENSEED;
+    int rank = omp_get_thread_num();
+    long rseed = (rank+1) * GENSEED;
     unsigned long long i;
 
     srand48_r(rseed, &rbuf);
@@ -72,7 +72,7 @@ int main(){
     pi = 4.0 * (double) ncirc/ (double) num_trials;
     dpi = pi*sqrt(2.0/num_trials);
     fprintf(stdout,"Trials: %ld Ncirc: %ld Threads: %d Elapsed: %.2f  PI: %.8lf dpi: %.1g\n",
-		    num_trials, ncirc, numthrd, tlaps, pi, dpi);
+		    num_trials, ncirc, size, tlaps, pi, dpi);
 
     return 0;
 }

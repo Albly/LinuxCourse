@@ -15,15 +15,15 @@
 static long num_trials = NPOINTS;
 
 long pihit(struct drand48_data *rbuf, long num_trials){			// note: num_trials is private!
-    int numthrd = omp_get_num_threads();
-    int mythrid = omp_get_thread_num();
+    int size = omp_get_num_threads();
+    int rank = omp_get_thread_num();
     double x, y, t, dres1, dres2;
     long ncirc = 0;
     long i;
 
     #pragma omp for
     for( i = 0; i < num_trials; i++ ){
-    //for( i = mythrid; i < num_trials; i+= numthrd ) {
+    //for( i = rank; i < num_trials; i+= size ) {
 
 	drand48_r(rbuf, &dres1);      // re-entrant random num gen
 	drand48_r(rbuf, &dres2);      // [0..1)
@@ -42,15 +42,15 @@ int main(){
 
     long ncirc = 0;
     double pi;
-    int numthrd = omp_get_max_threads();
+    int size = omp_get_max_threads();
 
     double tstart = omp_get_wtime();
 
 #pragma omp parallel default(none) firstprivate(num_trials) shared(ncirc)
 {
-    int mythrid = omp_get_thread_num();
+    int rank = omp_get_thread_num();
     struct drand48_data rbuf;
-    long rseed = (mythrid+1) * GENSEED;
+    long rseed = (rank+1) * GENSEED;
 
     srand48_r(rseed, &rbuf);
 
@@ -65,7 +65,7 @@ int main(){
 
     pi = 4.0 * (double) ncirc/ (double) num_trials;
     fprintf(stderr,"Trials: %ld Ncirc %ld on %d threads. T: %.2f  PI = %lf\n",
-		    num_trials, ncirc, numthrd, tlaps, pi);
+		    num_trials, ncirc, size, tlaps, pi);
     fprintf(stdout,"Trials %lld Ncirc %lld PI %lf\n",num_trials, ncirc, pi);
     return 0;
 }
